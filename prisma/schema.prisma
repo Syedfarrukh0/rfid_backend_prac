@@ -1,0 +1,153 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                Int                  @id @default(autoincrement())
+  name              String
+  email             String               @unique
+  password          String // Hashed password
+  role              Role                 @default(COMPANY)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  deletedAt         Boolean              @default(false)
+  devices           Device[] // One-to-many relation
+  cards             Card[] // User's RFID cards
+  attendanceRecords AttendanceRecord[] // User's attendance
+  schedules         AttendanceSchedule[] // User's schedules
+
+  @@map("users")
+}
+
+model Device {
+  id            Int       @id @default(autoincrement())
+  uuid          String    @unique
+  secret        String
+  name          String?
+  status        String    @default("PENDING_PROVISION")
+  devicePowered Boolean   @default(true)
+  ownerId       Int?
+  lastHeartbeat DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     Boolean   @default(false)
+  owner         User?     @relation(fields: [ownerId], references: [id])
+
+  @@map("devices")
+}
+
+model Card {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cards")
+}
+
+model AttendanceRecord {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  cardUuid   String
+  deviceUuid String
+  recordType String // "IN" or "OUT"
+  status     String // "PENDING", "PRESENT", "LATE", "EARLY", "DUPLICATE", "DENIED"
+  timestamp  DateTime
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("attendance_records")
+}
+
+model AttendanceSchedule {
+  id           Int    @id @default(autoincrement())
+  userId       Int
+  dayOfWeek    Int // 0=Sunday, 1=Monday, etc.
+  checkInFrom  String // Store as string "HH:MM:SS"
+  checkInTo    String // Store as string "HH:MM:SS"
+  checkOutFrom String // Store as string "HH:MM:SS"
+  checkOutTo   String // Store as string "HH:MM:SS"
+  user         User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, dayOfWeek])
+  @@map("attendance_schedules")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  COMPANY
+}
+
+// model User {
+//   id          Int          @id @default(autoincrement())
+//   name        String
+//   email       String       @unique
+//   password    String // Hashed password
+//   role        Role         @default(COMPANY)
+//   createdAt   DateTime     @default(now())
+//   updatedAt   DateTime     @updatedAt
+//   deletedAt   Boolean      @default(false)
+//   devices     Device[] // One-to-many relation
+//   rfidcards   RFIDCard[]
+//   attendances Attendance[]
+
+//   @@map("users")
+// }
+
+// model Device {
+//   id            Int       @id @default(autoincrement())
+//   uuid          String    @unique
+//   secret        String
+//   name          String?
+//   status        String    @default("PENDING_PROVISION") // PENDING_PROVISION, ACTIVE, etc.
+//   ownerId       Int? // Foreign key to User (nullable until bound)
+//   lastHeartbeat DateTime?
+//   createdAt     DateTime  @default(now())
+//   updatedAt     DateTime  @updatedAt
+//   deletedAt     Boolean   @default(false)
+//   owner         User?     @relation(fields: [ownerId], references: [id])
+
+//   @@map("devices")
+// }
+
+// model RFIDCard {
+//   id        Int      @id @default(autoincrement())
+//   uid       String   @unique
+//   userId    Int
+//   user      User     @relation(fields: [userId], references: [id])
+//   createdAt DateTime @default(now())
+// }
+
+// model Attendance {
+//   id      Int       @id @default(autoincrement())
+//   userId  Int
+//   date    DateTime
+//   inTime  DateTime?
+//   outTime DateTime?
+//   status  String // PRESENT, LATE, DENIED
+//   user    User      @relation(fields: [userId], references: [id])
+
+//   @@unique([userId, date])
+// }
+
+// enum Role {
+//   SUPERADMIN
+//   ADMIN
+//   COMPANY
+// }
