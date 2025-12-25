@@ -66,7 +66,7 @@ model AttendanceRecord {
   deviceUuid String
   recordType String // "IN" or "OUT"
   status     String // "PENDING", "PRESENT", "LATE", "EARLY", "DUPLICATE", "DENIED"
-  timestamp  DateTime
+  timestamp  DateTime @db.Timestamptz(6)
   createdAt  DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id])
